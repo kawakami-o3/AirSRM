@@ -185,6 +185,10 @@ class AirSRM
   end
 
   def getRoundId
+    unless File.exist?(XMLFILE)
+      #puts "saving a round list"
+      open(XMLFILE,'w').write(@agent.get("http://www.topcoder.com/tc?module=BasicData&c=dd_round_list").body)
+    end
     roundList = REXML::Document.new(File.open(XMLFILE,'r').read)
 
     roundList.elements.each("dd_round_list/row") do |i|
