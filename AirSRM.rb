@@ -218,11 +218,16 @@ class AirSRM
   end
 
   def genYourCode definition
-    cnt = open(@fnStatement,"r").read.gsub(/<pre>/,'').gsub(/<\/pre>/,'').gsub(/&quot;/,"\"")
+    cnt = open(@fnStatement,"r").read
+    cnt.gsub!(/<pre>/,'')
+    cnt.gsub!(/<\/pre>/,'')
+    cnt.gsub!(/&quot;/,"\"")
     cnt = Hpricot(cnt)/:table/:tr/:td/:table/:tr/:td/:table/:tr/:td/:table/:tr/:td
     
     arr = (cnt/:table/:tr/:td).map {|i| i.inner_html}
-    params = arr.delete_if {|i| i=~/\.$/}
+    params = arr.delete_if {|i| i=~/\.\s*(<.*?>)*$/} # reject sentences.
+    puts
+    puts params
    
     arr = cnt.map {|i| i.inner_html}
     returns = arr.delete_if {|i| not i=~/Returns: /}.map{|i| i.sub(/Returns: /,'')}
@@ -235,6 +240,8 @@ class AirSRM
     returns.length.times do |i|
       main += genMainCode(i,definition,[params[np*i..np*i+np-1].join(",\n"),returns[i]])
     end
+
+    #puts main
 
     ret = String.new(YOURCODE)
     ret.sub!(/\$MAINBODY\$/,main)
