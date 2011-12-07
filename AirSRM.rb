@@ -226,8 +226,6 @@ class AirSRM
     
     arr = (cnt/:table/:tr/:td).map {|i| i.inner_html}
     params = arr.delete_if {|i| i=~/\.\s*(<.*?>)*$/} # reject sentences.
-    puts
-    puts params
    
     arr = cnt.map {|i| i.inner_html}
     returns = arr.delete_if {|i| not i=~/Returns: /}.map{|i| i.sub(/Returns: /,'')}
