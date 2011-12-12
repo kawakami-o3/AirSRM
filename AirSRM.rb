@@ -10,14 +10,15 @@ require 'rexml/document'
 require 'pp'
 require 'optparse'
 
-XMLFILE  = './tc.xml'
+SrcDir=File.expand_path(__FILE__).sub(/[^\/]+$/,'')
 
 MAINBODY=<<'EOS'
 eq($NUMBER$, (new $CLASSNAME$()).$METHODNAME$($PARAMETER$), $ANSWER$);
 EOS
 
-TESTCODE=open("./template/TestTemplate.java",'r').read
-YOURCODE=open("./template/CodeTemplate.java",'r').read
+XMLFILE  = "#{SrcDir}/tc.xml"
+TESTCODE = open("#{SrcDir}/template/TestTemplate.java",'r').read
+YOURCODE = open("#{SrcDir}/template/CodeTemplate.java",'r').read
 
 
 
@@ -204,16 +205,27 @@ class AirSRM
 
   def genMainCode n,definition, parameter
     parText = definition[:parameters].split(",").zip(parameter[0].split("\n")).map do |i,j|
-      i =~ /\[\]/ ? "new #{i}#{j}" : j
+      ret = j
+      if i =~ /\[\]/
+        ret = "new #{i}#{j}"
+      elsif i =~ /char/ and (not j =~ /^'/)
+        ret = "'" + j + "'"
+      elsif i =~ /String/ and (not j =~ /^"/)
+        ret = '"' + j + '"'
+      end
+      ret
     end.join
 
     ret = String.new(MAINBODY)
     ret.sub!(/\$NUMBER\$/,n.to_s)
     ret.sub!(/\$CLASSNAME\$/,definition[:class])
     ret.sub!(/\$METHODNAME\$/,definition[:method])
-    ret.sub!(/\$PARAMETER\$/,parText)
-    ret.sub!(/\$ANSWER\$/,parameter[1])
+    #ret.sub!(/\$PARAMETER\$/,parText)
+    #ret.sub!(/\$ANSWER\$/,parameter[1]) # fail when the parameter contains a backslash.
+    ret = ret.split(/\$PARAMETER\$/).join(parText)
+    ret = ret.split(/\$ANSWER\$/).join(parameter[1])
     ret.gsub!(/",/,"\",\n")
+
     ret
   end
 
@@ -224,8 +236,10 @@ class AirSRM
     cnt.gsub!(/&quot;/,"\"")
     cnt = Hpricot(cnt)/:table/:tr/:td/:table/:tr/:td/:table/:tr/:td/:table/:tr/:td
     
+    
     arr = (cnt/:table/:tr/:td).map {|i| i.inner_html}
-    params = arr.delete_if {|i| i=~/\.\s*(<.*?>)*$/} # reject sentences.
+    params = arr.delete_if {|i| i=~/[\.!]\s*$/ || i=~/<.*>/} # reject sentences.
+
    
     arr = cnt.map {|i| i.inner_html}
     returns = arr.delete_if {|i| not i=~/Returns: /}.map{|i| i.sub(/Returns: /,'')}
@@ -239,10 +253,9 @@ class AirSRM
       main += genMainCode(i,definition,[params[np*i..np*i+np-1].join(",\n"),returns[i]])
     end
 
-    #puts main
 
     ret = String.new(YOURCODE)
-    ret.sub!(/\$MAINBODY\$/,main)
+    ret = ret.split(/\$MAINBODY\$/).join(main)
     ret.gsub!(/\$CLASSNAME\$/,definition[:class])
     ret.gsub!(/\$RC\$/,definition[:returns])
     ret.gsub!(/\$METHODNAME\$/,definition[:method])
@@ -276,14 +289,14 @@ class AirSRM
    
     ret = String.new(TESTCODE)
     ret.sub!(/\$CLASSNAME\$/,@problem[:name])
-    ret.sub!(/\$MAINBODY\$/,main)
+    ret = ret.split(/\$MAINBODY\$/).join(main)
     ret
   end
 
 
   def saveSystemTest
     def getParameters fn
-      (Hpricot(open(fn,'r').read)/:tr).map {|i| (i/:td).map {|i| i.inner_html}}
+      (Hpricot(open(fn,'r').read)/:tr).map {|i| (i/:td).map {|i| i.inner_html.gsub(/\\/,"\\\\\\")}}
     end
     if File.exist?(@fnTestCode) and (not @overwrite)
       puts "Test code, #{@fnTestCode}, exists."
