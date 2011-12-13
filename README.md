@@ -8,10 +8,10 @@ Topcoder SRM 練習支援スクリプトです。主な機能は
 
 
 # 使い方は?
-まず、AirSRM.rb をエディタで開いて、ユーザ名とパスワードを編集してください。
+まず、AirSRM.config をエディタで開いて、ユーザ名とパスワードを編集してください。
 
-	USERNAME = 'hogehoge'
-	PASSWORD = 'foobar'
+	username = 'hogehoge'
+	password = 'foobar'
 
 問題文をダウンロードするには3つのオプションが必要です。例えば、SRM 525 の Div 2 Easy をダウンロードしたい場合、
 

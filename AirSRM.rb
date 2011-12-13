@@ -1,7 +1,4 @@
 #!/usr/bin/env ruby
-USERNAME = 'hogehoge'
-PASSWORD = 'foobar'
-# ----------- ----------- ----------- ----------- ----------- -----------
 require 'rubygems'
 require 'mechanize'
 require 'hpricot'
@@ -12,22 +9,37 @@ require 'optparse'
 
 SrcDir=File.expand_path(__FILE__).sub(/[^\/]+$/,'')
 
+options = {}
+cfg = "#{SrcDir}/AirSRM.config"
+
+# parse the config file
+if File.exist?(cfg)
+  open(cfg,'r').each do |ln|
+    ln.gsub!(/\s/,'')
+    ln.sub!(/#.*$/,'')
+    tmp = ln.split(/=/)
+    options[tmp[0].intern] = tmp[1] if tmp[0]
+  end
+end
+
+
+# template
 MAINBODY=<<'EOS'
 eq($NUMBER$, (new $CLASSNAME$()).$METHODNAME$($PARAMETER$), $ANSWER$);
 EOS
-
 XMLFILE  = "#{SrcDir}/tc.xml"
 TESTCODE = open("#{SrcDir}/template/TestTemplate.java",'r').read
 YOURCODE = open("#{SrcDir}/template/CodeTemplate.java",'r').read
 
 
-
 class AirSRM
 
   def initialize options
+    @username = options[:username]
+    @password = options[:password]
     @overwrite = options[:force]
     @srm = options[:srm].to_i
-    @div = options[:div].to_i
+    @div = options[:division].to_i
     @level = options[:level].to_i
     @agent = Mechanize.new do |a|
       a.user_agent_alias = 'Mechanize'
@@ -49,8 +61,8 @@ class AirSRM
     page = @agent.get('https://community.topcoder.com/tc?&module=Login')
 
     sys_form = page.form("frmLogin")
-    sys_form.field_with(:name => 'username').value = USERNAME
-    sys_form.field_with(:name => 'password').value = PASSWORD
+    sys_form.field_with(:name => 'username').value = @username
+    sys_form.field_with(:name => 'password').value = @password
 
     page = @agent.submit(sys_form)
 
@@ -320,7 +332,6 @@ class AirSRM
 end
 
 
-options = {}
 options[:systemtest] = false
 options[:force] = false
 optparse = OptionParser.new do |opts|
@@ -335,7 +346,7 @@ optparse = OptionParser.new do |opts|
   end
   opts.on('--div=VAL','--division=VAL') do |v|
     if v == "1" or v == "2"
-      options[:div] = v
+      options[:division] = v
     else
       puts "--division=[1-2]"
       exit
@@ -353,6 +364,15 @@ optparse = OptionParser.new do |opts|
 
 end
 optparse.parse!
+
+# get necessary parameters from STDIN.
+%W[username password srm division level].each do |s|
+  unless options[s.intern]
+    begin
+      print "#{s}: "
+    end while (options[s.intern] = STDIN.gets.chomp) == ""
+  end
+end
 
 if (options[:systemtest])
   AirSRM.new(options).saveSystemTest
