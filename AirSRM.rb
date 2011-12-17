@@ -249,7 +249,7 @@ class AirSRM
     cnt = Hpricot(cnt)/:table/:tr/:td/:table/:tr/:td/:table/:tr/:td/:table/:tr/:td
     
     
-    arr = (cnt/:table/:tr/:td).map {|i| i.inner_html}
+    arr = (cnt/:table/:tr/:td).map {|i| i.inner_html.gsub(/\n/,'')}
     params = arr.delete_if {|i| i=~/[\.!]\s*$/ || i=~/<.*>/} # reject sentences.
 
    
