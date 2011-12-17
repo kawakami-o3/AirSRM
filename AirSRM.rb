@@ -254,6 +254,7 @@ class AirSRM
    
     arr = cnt.map {|i| i.inner_html}
     returns = arr.delete_if {|i| not i=~/Returns: /}.map{|i| i.sub(/Returns: /,'')}
+    returns = returns.map {|i| "new #{definition[:returns]}#{i}"} if definition[:returns] =~ /\[\]/
 
     arr = cnt.map {|i| i.inner_html}
     methodparms = arr[arr.index("Method signature:")+1].scan(/\((.*?)\)/).flatten.first
