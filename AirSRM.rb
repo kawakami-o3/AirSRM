@@ -235,7 +235,13 @@ class AirSRM
     #ret.sub!(/\$PARAMETER\$/,parText)
     #ret.sub!(/\$ANSWER\$/,parameter[1]) # fail when the parameter contains a backslash.
     ret = ret.split(/\$PARAMETER\$/).join(parText)
-    ret = ret.split(/\$ANSWER\$/).join(parameter[1])
+
+    answer = parameter[1]
+    if definition[:returns] =~ /\[\]/
+      answer = "new #{definition[:returns]}#{parameter[1]}"
+    end
+    ret = ret.split(/\$ANSWER\$/).join(answer)
+
     ret.gsub!(/",/,"\",\n")
 
     ret
