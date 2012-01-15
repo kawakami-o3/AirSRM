@@ -1,0 +1,1 @@
+eq($NUMBER$, (new $CLASSNAME$()).$METHODNAME$($PARAMETER$), $ANSWER$);

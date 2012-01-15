@@ -7,14 +7,15 @@ require 'rexml/document'
 require 'pp'
 require 'optparse'
 
-SrcDir=File.expand_path(__FILE__).sub(/[^\/]+$/,'')
+SrcDir     = File.expand_path(__FILE__).sub(/[^\/]+$/,'')
+XMLFILE    = "#{SrcDir}/tc.xml"
+ConfigFile = "#{SrcDir}/AirSRM.config"
 
 options = {}
-cfg = "#{SrcDir}/AirSRM.config"
 
 # parse the config file
-if File.exist?(cfg)
-  open(cfg,'r').each do |ln|
+if File.exist?(ConfigFile)
+  open(ConfigFile,'r').each do |ln|
     ln.gsub!(/\s/,'')
     ln.sub!(/#.*$/,'')
     tmp = ln.split(/=/)
@@ -23,36 +24,39 @@ if File.exist?(cfg)
 end
 
 
+unless %W[java cpp cs].inject(true) {|s,i| s or (options[:language] == i)}
+  puts "Language option is wrong. Default language: java"
+  options[:language] = "java"
+end
 # template
-MAINBODY=<<'EOS'
-eq($NUMBER$, (new $CLASSNAME$()).$METHODNAME$($PARAMETER$), $ANSWER$);
-EOS
-XMLFILE  = "#{SrcDir}/tc.xml"
-TESTCODE = open("#{SrcDir}/template/TestTemplate.java",'r').read
-YOURCODE = open("#{SrcDir}/template/CodeTemplate.java",'r').read
+MAINBODY = open("#{SrcDir}/template/MainTemplate.#{options[:language]}",'r').read
+TESTCODE = open("#{SrcDir}/template/TestTemplate.#{options[:language]}",'r').read
+YOURCODE = open("#{SrcDir}/template/CodeTemplate.#{options[:language]}",'r').read
 
 
 class AirSRM
 
   def initialize options
-    @username = options[:username]
-    @password = options[:password]
-    @overwrite = options[:force]
-    @srm = options[:srm].to_i
-    @div = options[:division].to_i
-    @level = options[:level].to_i
+    @username  = options[:username]
+    @password  = options[:password]
+    @language  = options[:language]
+    @overwrite = options[:force   ]
+    @srm       = options[:srm     ].to_i
+    @div       = options[:division].to_i
+    @level     = options[:level   ].to_i
+
     @agent = Mechanize.new do |a|
       a.user_agent_alias = 'Mechanize'
     end
 
 
-    @rd = getRoundId()
-    @problem = getProblem()
-    @pm = @problem[:id]
+    @rd          = getRoundId()
+    @problem     = getProblem()
+    @pm          = @problem[:id]
     @fnStatement = "#{@problem[:name]}.html"
     @fnParameter = "#{@problem[:name]}.systemtest.html"
-    @fnTestCode = "Test#{@problem[:name]}.java"
-    @fnYourCode = "#{@problem[:name]}.java"
+    @fnTestCode  = "Test#{@problem[:name]}.#{options[:language]}"
+    @fnYourCode  = "#{@problem[:name]}.#{options[:language]}"
   end
 
   def login
@@ -210,6 +214,13 @@ class AirSRM
     ret = {}
     arr.each do |i|
       ret[:"#{i[0].sub(/:/,'').downcase}"] = i[1].gsub(/\s+/,'')
+    end
+
+    unless @language == 'java'
+      [:parameters, :returns].each do |key|
+        ret[key].gsub!(/String\[\]/, @language == 'cs' ? 'string[]' : 'vector<string>')
+        ret[key].gsub!(/String/, 'string')
+      end
     end
     ret
   end
