@@ -218,8 +218,9 @@ class AirSRM
 
     unless @language == 'java'
       [:parameters, :returns].each do |key|
-        ret[key].gsub!(/String\[\]/, @language == 'cs' ? 'string[]' : 'vector<string>')
+        #ret[key].gsub!(/String\[\]/, @language == 'cs' ? 'string[]' : 'vector<string>')
         ret[key].gsub!(/String/, 'string')
+        ret[key].gsub!(/(\w+)\[\]/, "vector<\\1>") if @language == 'cpp'
       end
     end
     ret
@@ -227,31 +228,62 @@ class AirSRM
 
 
   def genMainCode n,definition, parameter
-    parText = definition[:parameters].split(",").zip(parameter[0].split("\n")).map do |i,j|
-      ret = j
-      if i =~ /\[\]/
-        ret = "new #{i}#{j}"
-      elsif i =~ /char/ and (not j =~ /^'/)
-        ret = "'" + j + "'"
-      elsif i =~ /String/ and (not j =~ /^"/)
-        ret = '"' + j + '"'
-      end
-      ret
-    end.join
-
     ret = String.new(MAINBODY)
     ret.sub!(/\$NUMBER\$/,n.to_s)
     ret.sub!(/\$CLASSNAME\$/,definition[:class])
     ret.sub!(/\$METHODNAME\$/,definition[:method])
     #ret.sub!(/\$PARAMETER\$/,parText)
     #ret.sub!(/\$ANSWER\$/,parameter[1]) # fail when the parameter contains a backslash.
-    ret = ret.split(/\$PARAMETER\$/).join(parText)
 
-    answer = parameter[1]
-    if definition[:returns] =~ /\[\]/
-      answer = "new #{definition[:returns]}#{parameter[1]}"
+    if @language == 'cpp'
+      methodargs = ["hogeA"]
+      definition[:parameters].count(',').times do |i|
+        methodargs << methodargs[i].next
+      end
+      ret.sub!(/\$PARAMETER\$/,methodargs.join(","))
+      ret.sub!(/\$ANSWER\$/,"returnVal")
+
+      # type, name, value
+      params = [definition[:parameters].split(/,/),definition[:returns]].flatten.zip(
+        [methodargs,"returnVal"].flatten,
+        [parameter[0].split(/,\n/),parameter[1]].flatten
+      )
+
+
+      strPrepare = params.map do |type,name,value|
+        i = ""
+        if type =~ /vector/
+          i += "#{type.scan(/<(.*)>/).flatten.first} #{name}Array[] = #{value};\n"
+          i += "#{type} #{name}( #{name}Array, #{name}Array + ARRSIZE(#{name}Array) );\n"
+        else
+          i += "#{type} #{name} = #{value};\n"
+        end
+        i
+      end.join
+      
+      ret.sub!(/\$PREPAREDEF\$/,strPrepare)
+    else
+      parText = definition[:parameters].split(",").zip(parameter[0].split("\n")).map do |i,j|
+        ret = j
+        if i =~ /\[\]/
+          ret = "new #{i}#{j}"
+        elsif i =~ /char/ and (not j =~ /^'/)
+          ret = "'" + j + "'"
+        elsif i =~ /String/ and (not j =~ /^"/)
+          ret = '"' + j + '"'
+        end
+        ret
+      end.join
+
+      ret = ret.split(/\$PARAMETER\$/).join(parText)
+
+
+      answer = parameter[1]
+      if definition[:returns] =~ /\[\]/
+        answer = "new #{definition[:returns]}#{parameter[1]}"
+      end
+      ret = ret.split(/\$ANSWER\$/).join(answer)
     end
-    ret = ret.split(/\$ANSWER\$/).join(answer)
 
     ret.gsub!(/",/,"\",\n")
 
@@ -275,13 +307,13 @@ class AirSRM
 
     arr = cnt.map {|i| i.inner_html}
     methodparms = arr[arr.index("Method signature:")+1].scan(/\((.*?)\)/).flatten.first
+    methodparms.gsub!(/(\w+)\[\]/, "vector<\\1>") if @language == 'cpp'
 
     np = params.length / returns.length
     main = ''
     returns.length.times do |i|
       main += genMainCode(i,definition,[params[np*i..np*i+np-1].join(",\n"),returns[i]])
     end
-
 
     ret = String.new(YOURCODE)
     ret = ret.split(/\$MAINBODY\$/).join(main)
@@ -293,6 +325,10 @@ class AirSRM
     ret.gsub!(/\$ENDCUT\$/,'// END CUT HERE')
     ret.gsub!(/\$PROBLEMDESC\$/,'')
     ret.gsub!(/\$WRITERCODE\$/,'')
+    
+    
+
+
     ret
   end
 

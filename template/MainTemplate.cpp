@@ -1,0 +1,5 @@
+{
+$PREPAREDEF$
+$CLASSNAME$ theObject;
+eq($NUMBER$, theObject.$METHODNAME$($PARAMETER$), $ANSWER$);
+}

@@ -3,10 +3,10 @@ $PROBLEMDESC$
 $ENDCUT$
 import java.util.*;
 public class $CLASSNAME$ {
-    public $RC$ $METHODNAME$($METHODPARMS$) {
-        $RC$ res;
-        return res;
-    }
+  public $RC$ $METHODNAME$($METHODPARMS$) {
+    $RC$ ret;
+    return ret;
+  }
 $WRITERCODE$
 $BEGINCUT$
     public static void main(String[] args) {
