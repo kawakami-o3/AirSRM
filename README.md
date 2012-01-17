@@ -5,9 +5,14 @@ Topcoder SRM 練習支援スクリプトです。主な機能は
 * 雛形コードの生成（[FileEdit.jar](http://community.topcoder.com/contest/classes/FileEdit/FileEdit.htm)プラグイン形式に準拠）
 * システムテストで使用されるパラメータのダウンロード
 * システムテスト実行コードの生成
+* C++, C#, Java をサポート
 
 
 # 使い方は?
+
+以下では、Javaでの使用方法を解説します。C++やC#での利用方法はWikiを参照してください。
+[github wiki](https://github.com/kawakami-o3/AirSRM/wiki) 
+
 まず、AirSRM.config をエディタで開いて、ユーザ名とパスワードを編集してください。
 
 	username = 'hogehoge'
