@@ -264,15 +264,15 @@ class AirSRM
       ret.sub!(/\$PREPAREDEF\$/,strPrepare)
     else
       parText = definition[:parameters].split(",").zip(parameter[0].split("\n")).map do |i,j|
-        ret = j
+        tmp = j
         if i =~ /\[\]/
-          ret = "new #{i}#{j}"
+          tmp = "new #{i}#{j}"
         elsif i =~ /char/ and (not j =~ /^'/)
-          ret = "'" + j + "'"
+          tmp = "'" + j + "'"
         elsif i =~ /String/ and (not j =~ /^"/)
-          ret = '"' + j + '"'
+          tmp = '"' + j + '"'
         end
-        ret
+        tmp
       end.join
 
       ret = ret.split(/\$PARAMETER\$/).join(parText)
