@@ -1,3 +1,5 @@
+[English version here](https://github.com/kawakami-o3/AirSRM/wiki/English) 
+
 # これは何?
 Topcoder SRM 練習支援スクリプトです。主な機能は
 
