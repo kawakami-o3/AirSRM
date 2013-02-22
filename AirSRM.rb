@@ -48,6 +48,9 @@ class AirSRM
     @agent = Mechanize.new do |a|
       a.user_agent_alias = 'Mechanize'
     end
+    @agent.agent.http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+    @agent.agent.http.ssl_version = :SSLv3
+
 
 
     @rd          = getRoundId()
